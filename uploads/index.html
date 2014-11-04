@@ -1,0 +1,238 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script>
+
+	$( document ).ready(function() {
+
+		
+      
+		var width=1500;
+		var height=500;
+		var players = [];
+		var lastupdated = 0;
+		var started = false;
+		var c = document.getElementById("myCanvas");
+		var ctx = c.getContext("2d");
+		var colors = ["#FF0000","#0000FF","#00FF00","#8B008B","#E9967A","#ADFF2F","#66CDAA"];
+
+
+			function draw() {  
+        var canvas = document.getElementById("myCanvas");  
+        if (canvas.getContext) {  
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+    }
+    draw();
+		  document.getElementById('myCanvas').addEventListener('click', function() {
+        ctx.clearRect(0, 0, c.width, c.height);
+      }, false);
+
+		
+
+		function objectLength(obj) {
+  			var result = 0;
+ 			for(var prop in obj) {
+    			if (obj.hasOwnProperty(prop)) {
+    				result++;
+    				}
+  				}
+  			return result;
+		}
+
+
+		function exsists(data){
+			return players[data.con]!=null;
+		}
+
+		function addPlayer(data){
+			console.log('player: '+ data.con + ' has connected')
+			players[data.con] = {'con':data.con,
+			'xpos':700,
+			'ypos':350,
+			'ang':0,
+			'angAdd':data.data.beta,
+			'lastupdated': lastupdated,
+			'lines' : 0,
+			'color' : objectLength(players)
+			//'mark' : document.createElement("div").appendChild(document.createTextNode(data.con+" "))
+			};
+			//var element = document.getElementById("players");
+			//element.appendChild(players[data.con].mark);
+
+		}
+
+		function update(data){
+			players[data.con].angAdd = data.data.beta;
+			players[data.con].lastupdated = lastupdated; 
+
+		}
+
+
+
+
+		
+		
+		//ctx.moveTo(700,350);
+	  	var socket = io('http://antonfredriksson.se');
+	  	socket.on('comp', function (data) {
+	  	//	$('#beta').css({transform: 'rotate(' + data.data.beta + 'deg)'})
+	  	//	 $('#alpha').css({transform: 'rotate(' + data.data.alpha + 'deg)'})
+	    //  $('#gamma').css({transform: 'rotate(' + data.data.gamma + 'deg)'})
+	  		if(exsists(data)){
+	  			
+	  			update(data);
+	  		}else{
+	  			
+	  			addPlayer(data);
+	  			
+	  		}
+	  		if(!started){
+	  			started = true;
+	  			setInterval(startGame,10);
+	  		}
+	  		
+	  		
+		    //console.log("xpos:" +xpos +"ypos:"+ ypos + "angle:" + data.beta);
+		    //console.log("ychange:"+ Math.cos(90) + "xchange:" +Math.cos(90) )
+	    //$('#alpha').css({transform: 'rotate(' + data.alpha + 'deg)'})
+	    
+	    //$('#gamma').css({transform: 'rotate(' + data.gamma + 'deg)'})
+	    //socket.emit('my other event', { hello: ++data.hello });
+	  });
+
+	  	socket.on('changecolor', function (data) {
+	  		
+	  	players[data.con].color++;
+
+	  	socket.emit(data.con+"c",colors[players[data.con].color % colors.length]);
+	  	});
+
+
+
+	  	
+		ctx.lineWidth = 10;
+		var xpos=700;
+		var ypos=350;
+		var ang = 0;
+
+		function detectLine(x, y) {
+ 		   var imageData = ctx.getImageData(0, 0, width, height),
+        		inputData = imageData.data,
+        		pData = (~~x + (~~y * width)) * 4;
+    
+    			if (inputData[pData + 3]) {
+    				
+      				  return true;
+    				}
+    
+    				return false;
+				}
+
+	  	function startGame(){
+	  		
+	  		//console.log(objectLength(players));
+	  		for (var i = 0; i < players.length; i++) {
+	  			
+	  			if(players[i]!=null){
+			  		
+	  				ctx.beginPath();
+			  		if(lastupdated-players[i].lastupdated <20){
+			  			if(players[i].lines>2){
+			  				//console.log('over');
+			  			}
+			  			if(players[i].ypos < 0){
+			  				console.log('00000')
+			  				players[i].ypos = c.height;
+			  				players[i].ang = players[i].ang + Math.PI;
+			  			}
+			  			if(players[i].ypos > c.height){
+			  				console.log('00000')
+			  				players[i].ypos = 0;
+			  				players[i].ang = players[i].ang + Math.PI;
+			  			}
+			  			if(players[i].xpos < 0){
+			  				console.log('00000')
+			  				players[i].xpos = c.width;
+			  				players[i].ang = players[i].ang + Math.PI;
+			  			}
+			  			if(players[i].xpos > c.width){
+			  				console.log('00000')
+			  				players[i].xpos = 0;
+			  				players[i].ang = players[i].ang + Math.PI;
+			  			}
+
+			  			ctx.moveTo(players[i].xpos,players[i].ypos);
+			  			oldxpos = players[i].xpos;
+			  			
+
+			  			players[i].ang = players[i].ang - players[i].angAdd/30;
+			  			players[i].ypos= players[i].ypos + 2*Math.cos(players[i].ang * (Math.PI / 180));
+			  			players[i].xpos= players[i].xpos + 2*Math.sin(players[i].ang * (Math.PI / 180));
+						ctx.strokeStyle = colors[players[i].color % colors.length];
+						
+						
+						ctx.lineTo(players[i].xpos,players[i].ypos);
+						ctx.stroke();
+						ctx.closePath();
+						
+						
+						
+
+
+						// Loop over each pixel and invert the color.
+
+
+					}
+
+				}
+
+	  		}
+	  		lastupdated++;
+			
+	  	}
+	  
+  });
+</script>
+
+<body style="padding:0;margin:0;">
+ 
+	<!--<div id= "alpha">alpha</div>
+	<div id= "beta">beta</div> 
+	<div id= "gamma">gamma</div>-->
+
+<canvas id="myCanvas" width="1600" height="800" style="background:#000;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+
+
+</script>
+	
+</body>
+<style>
+ #buttons {
+        
+      }
+      #buttons > input {
+        padding: 10px;
+        display: block;
+        margin-top: 5px;
+      }
+div{
+	color: black;
+	font-size: 35px;
+	height: 100px;
+	float: left;
+	width: 32%;
+	background-color: red;
+}
+
+#players > div{
+height: 100px;
+width: 100px;
+color: red;
+
+}
+
+</style>

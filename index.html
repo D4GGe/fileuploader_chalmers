@@ -1,1 +1,29 @@
-daadkfhljfaa sfdslkjjfnaslknfdklöad afslkdjabsf afsljygdbsol
+<input type="file" id="uploadfile" name="uploadfile" />
+<input type="button" value="upload" onclick="upload()" />
+<div id="text"> </div>
+<script>
+   var client = new XMLHttpRequest();
+  
+   function upload() 
+   {
+      var file = document.getElementById("uploadfile").files[0];
+     
+      /* Create a FormData instance */
+      var formData = new FormData();
+      /* Add the file */ 
+      formData.append("file1", file);
+
+      client.open("post", "upload.php");
+      //client.setRequestHeader("Content-Type", "multipart/form-data");
+      client.send(formData);  /* Send to server */ 
+   }
+     
+   /* Check the response status */  
+   client.onreadystatechange = function() 
+   {
+      if (client.readyState == 4 && client.status == 200) 
+      {
+         document.getElementById('text').innerHTML = client.response;
+      }
+   }
+</script>
